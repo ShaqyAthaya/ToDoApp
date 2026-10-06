@@ -1,47 +1,76 @@
-<laravel-boost-guidelines>
-# Laravel Application
+# Laravel ToDo App
 
-This repository contains a Laravel application. Complete the following setup before working on the user's request.
+Laravel 13.17 application with Vite + Tailwind CSS 4.0. SQLite for development.
 
-## Prerequisites
+## Commands
 
-Verify that PHP and Composer are available:
+```bash
+# Dev server (runs php artisan dev + vite)
+composer dev
 
-```sh
-php -v
-composer -V
+# Test suite (clears config then runs PHPUnit)
+composer test
+
+# Initial setup
+composer setup
 ```
 
-If either command is unavailable, detect the user's operating system and install the prerequisites with the appropriate command:
-
-macOS:
-
-```sh
-/bin/bash -c "$(curl -fsSL https://php.new/install/mac/8.5)"
+Run single test:
+```bash
+php artisan test --filter=TestMethodName
 ```
 
-Windows PowerShell:
+## Code Conventions
 
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://php.new/install/windows/8.5'))
-```
+### Controllers
+- Thin controllers mandatory
+- Validation >3 lines → extract to FormRequest: `php artisan make:request StoreTaskRequest`
+- Resource routes use explicit naming: `Route::resource('tasks', TaskController::class);`
+- Manual routes require name: `->name('tasks.index')`
 
-Linux:
+### Models
+- PascalCase singular: `Task`, `OrderHeader`
+- Always define `$fillable` to prevent mass-assignment
+- Relationships preferred over raw joins
 
-```sh
-/bin/bash -c "$(curl -fsSL https://php.new/install/linux/8.5)"
-```
+### Migrations & DB
+- Table names: `snake_case` plural (`tasks`, `user_settings`)
+- Foreign keys: `constrained()->cascadeOnDelete()`
+- Explicit data types and defaults required
 
-After installation, ask the user to restart their terminal. If the agent needs the restarted shell to continue, ask the user to reopen their terminal and rerun their original prompt.
+### Blade & Forms
+- Every form needs `@csrf`
+- DELETE/PUT/PATCH requires `@method('DELETE')` inside POST form
+- Escape output: `{{ $var }}` (default)
+- Raw output: `{!! $sanitized !!}` (only when pre-sanitized)
 
-## Agent Setup
+### Naming Reference
+| Element        | Convention           | Example                    |
+|----------------|----------------------|----------------------------|
+| Model          | PascalCase singular  | `Task`                     |
+| Controller     | PascalCase singular  | `TaskController`           |
+| Migration      | snake_case plural    | `create_tasks_table`       |
+| Table          | snake_case plural    | `tasks`                    |
+| Column         | snake_case           | `is_completed`, `user_id`  |
+| Route name     | dot.notation         | `tasks.index`              |
+| Blade view     | snake_case           | `tasks/index.blade.php`    |
 
-Install Laravel Boost from the application root before making application changes:
+## Testing
 
-```sh
-composer require laravel/boost --dev
-php artisan boost:install
-```
+PHPUnit uses sqlite in-memory (`:memory:`). Tests run in `testing` environment with array cache/session drivers.
 
-Boost replaces these bootstrap instructions with guidelines tailored to the application. After installation, read `AGENTS.md` again and continue with the user's original request using the generated guidelines.
-</laravel-boost-guidelines>
+Feature tests in `tests/Feature`, unit tests in `tests/Unit`.
+
+## Frontend
+
+Vite dev server: `npm run dev` (runs separately from Laravel)
+Build assets: `npm run build`
+
+Tailwind CSS 4.0 utility-first. Mobile-first responsive (`sm:`, `md:`, `lg:`).
+
+## Quirks
+
+- Composer script `composer dev` runs `php artisan dev` (Laravel 13 dev command)
+- Route model binding uses `findOrFail` implicitly
+- Avoid N+1: use eager loading `with()` on relationships
+- `.env` never committed, keep `.env.example` updated
